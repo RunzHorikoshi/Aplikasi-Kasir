@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kasir Sederhana</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface2: #242424;
+      --border: #2e2e2e;
+      --text: #f0ede8;
+      --muted: #888;
+      --accent: #f7931a;
+      --accent-dark: #c97615;
+      --accent-soft: rgba(247,147,26,0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1.25rem;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .logo {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700; color: #fff;
+    }
+
+    header h1 { font-size: 18px; font-weight: 600; }
+    header span { font-size: 13px; color: var(--muted); margin-left: auto; }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 640px) {
+      .wrap { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.85rem;
+    }
+
+    /* PRODUK GRID - pakai 2 kolom */
+    .produk-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .produk-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .produk-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .produk-btn:active { transform: scale(0.97); }
+
+    .produk-img-wrap {
+      width: 100%;
+      aspect-ratio: 4/3;
+      overflow: hidden;
+      background: var(--border);
+      position: relative;
+    }
+
+    .produk-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .produk-img-placeholder {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      background: var(--surface2);
+    }
+
+    .produk-info { padding: 8px 10px; }
+    .produk-name { font-size: 13px; font-weight: 500; color: var(--text); display: block; }
+    .produk-price { font-size: 12px; color: var(--accent); display: block; margin-top: 2px; font-weight: 600; }
+
+    .custom-row { display: flex; gap: 6px; }
+
+    .custom-row input {
+      flex: 1;
+      font-size: 13px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+
+    .custom-row input:focus { border-color: var(--accent); }
+    .custom-row input::placeholder { color: var(--muted); }
+
+    .btn-add {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--accent);
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    .btn-add:hover { background: rgba(247,147,26,0.22); }
+
+    .keranjang-list { list-style: none; min-height: 60px; }
+
+    .keranjang-item {
+      display: flex;
+      align-items: center;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 8px;
+    }
+
+    .keranjang-item:last-child { border-bottom: none; }
+
+    .item-thumb {
+      width: 36px; height: 36px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: var(--surface2);
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      overflow: hidden;
+    }
+
+    .item-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+
+    .item-name { font-size: 13px; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .item-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+    .qty-btn {
+      width: 26px; height: 26px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.1s;
+    }
+
+    .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .qty-num { font-size: 13px; min-width: 20px; text-align: center; font-weight: 600; }
+    .item-subtotal { font-size: 12px; color: var(--accent); min-width: 65px; text-align: right; font-weight: 600; flex-shrink: 0; }
+
+    .item-del {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 15px; padding: 2px 4px;
+      flex-shrink: 0; transition: color 0.1s;
+    }
+    .item-del:hover { color: #e05c5c; }
+
+    .empty-msg { font-size: 13px; color: var(--muted); text-align: center; padding: 1.5rem 0; }
+
+    .total-section { border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 1rem; }
+    .total-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
+    .total-big { display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+
+    .bayar-section { margin-top: 1rem; }
+    .bayar-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
+
+    /* NOMINAL CEPAT */
+    .nominal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .nominal-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 7px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .nominal-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .nominal-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+    .nominal-uang-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .uang-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .uang-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+    .bayar-input {
+      width: 100%;
+      font-size: 18px;
+      font-weight: 600;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      color: var(--text);
+      margin-bottom: 10px;
+      outline: none;
+    }
+
+    .bayar-input:focus { border-color: var(--accent); }
+    .bayar-input::placeholder { color: var(--muted); font-weight: 400; font-size: 15px; }
+
+    .kembalian-box {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .kembalian-label { font-size: 13px; color: var(--accent); font-weight: 500; }
+    .kembalian-val { font-size: 20px; font-weight: 700; color: var(--accent); }
+
+    .btn-bayar {
+      width: 100%;
+      padding: 13px;
+      font-size: 15px;
+      font-weight: 700;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-bayar:hover { background: var(--accent-dark); }
+    .btn-bayar:active { transform: scale(0.98); }
+    .btn-bayar:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; border: 1px solid var(--border); }
+
+    .btn-reset {
+      width: 100%;
+      padding: 10px;
+      font-size: 13px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--muted);
+      cursor: pointer;
+      margin-top: 8px;
+      transition: border-color 0.15s;
+    }
+
+    .btn-reset:hover { border-color: #555; color: var(--text); }
+
+    /* STRUK */
+    .struk-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 1rem;
+    }
+
+    .struk-overlay.show { display: flex; }
+
+    .struk-card {
+      background: #fff;
+      color: #111;
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      width: 300px;
+      max-width: 100%;
+      font-family: 'Courier New', monospace;
+    }
+
+    .struk-header { text-align: center; padding-bottom: 1rem; border-bottom: 1px dashed #ccc; margin-bottom: 1rem; }
+    .struk-toko { font-size: 16px; font-weight: 700; }
+    .struk-sub { font-size: 11px; color: #666; margin-top: 2px; }
+    .struk-item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
+    .struk-item-row span:last-child { color: #444; }
+    hr.struk-divider { border: none; border-top: 1px dashed #ccc; margin: 8px 0; }
+    .struk-total-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; }
+    .struk-kmb-row { display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-top: 4px; }
+    .struk-footer { text-align: center; font-size: 11px; color: #888; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #ccc; }
+    .struk-actions { display: flex; gap: 8px; margin-top: 1rem; }
+    .struk-actions button { flex: 1; padding: 9px; font-size: 13px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .btn-print { background: #111; color: #fff; border: none; }
+    .btn-close-struk { background: none; border: 1px solid #ccc; color: #333; }
+
+    @media print {
+      body, .wrap, header, .btn-reset { display: none !important; }
+      .struk-overlay { display: flex !important; position: static; background: none; padding: 0; }
+      .struk-actions { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">₿</div>
+  <h1>Kasir Sederhana</h1>
+  <span id="jamDisplay"></span>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="panel-title">Produk</div>
+    <div class="produk-grid" id="produkGrid"></div>
+    <div class="panel-title">Tambah produk lain</div>
+    <div class="custom-row">
+      <input type="text" id="cNama" placeholder="Nama produk" />
+      <input type="number" id="cHarga" placeholder="Harga" min="0" />
+      <button class="btn-add" onclick="tambahCustom()">+ Tambah</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Keranjang</div>
+    <ul class="keranjang-list" id="keranjangList">
+      <li class="empty-msg">Belum ada item</li>
+    </ul>
+    <div class="total-section">
+      <div class="total-row"><span>Subtotal</span><span id="subtotal">Rp 0</span></div>
+      <div class="total-big"><span>Total</span><span id="totalDisplay">Rp 0</span></div>
+    </div>
+    <div class="bayar-section">
+      <div class="bayar-label">Uang dibayar</div>
+
+      <!-- Tombol nominal cepat -->
+      <div class="nominal-uang-grid">
+        <button class="uang-btn" onclick="setNominal(5000)">Rp 5.000</button>
+        <button class="uang-btn" onclick="setNominal(10000)">Rp 10.000</button>
+        <button class="uang-btn" onclick="setNominal(20000)">Rp 20.000</button>
+        <button class="uang-btn" onclick="setNominal(50000)">Rp 50.000</button>
+        <button class="uang-btn" onclick="setNominal(100000)">Rp 100.000</button>
+        <button class="uang-btn" onclick="setBayarPas()">Uang pas</button>
+      </div>
+
+      <!-- Tombol tambah nominal -->
+      <div class="nominal-grid">
+        <button class="nominal-btn" onclick="tambahNominal(5000)">+5rb</button>
+        <button class="nominal-btn" onclick="tambahNominal(10000)">+10rb</button>
+        <button class="nominal-btn" onclick="tambahNominal(20000)">+20rb</button>
+        <button class="nominal-btn" onclick="tambahNominal(50000)">+50rb</button>
+      </div>
+
+      <input class="bayar-input" type="number" id="bayarInput" placeholder="Atau ketik nominal..." min="0" oninput="hitungKembalian()" />
+
+      <div class="kembalian-box">
+        <span class="kembalian-label">Kembalian</span>
+        <span class="kembalian-val" id="kembalianVal">Rp 0</span>
+      </div>
+      <button class="btn-bayar" id="btnBayar" onclick="prosesBayar()" disabled>Bayar Sekarang</button>
+      <button class="btn-reset" onclick="resetKasir()">Reset transaksi</button>
+    </div>
+  </div>
+</div>
+
+<div class="struk-overlay" id="strukOverlay">
+  <div class="struk-card">
+    <div class="struk-header">
+      <div class="struk-toko">🧾 Toko Kita</div>
+      <div class="struk-sub" id="strukTanggal"></div>
+    </div>
+    <div id="strukItems"></div>
+    <hr class="struk-divider">
+    <div class="struk-total-row"><span>TOTAL</span><span id="strukTotal"></span></div>
+    <div class="struk-kmb-row"><span>Bayar</span><span id="strukBayar"></span></div>
+    <div class="struk-kmb-row"><span>Kembalian</span><span id="strukKembalian"></span></div>
+    <div class="struk-footer">Terima kasih sudah berbelanja! 🙏</div>
+    <div class="struk-actions">
+      <button class="btn-print" onclick="window.print()">Print Struk</button>
+      <button class="btn-close-struk" onclick="tutupStruk()">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const produkDefault = [
+    { nama: "Nasi goreng", harga: 15000, emoji: "🍳" },
+    { nama: "Mie ayam", harga: 12000, emoji: "🍜" },
+    { nama: "Es teh", harga: 5000, emoji: "🧋" },
+    { nama: "Air mineral", harga: 4000, emoji: "💧" },
+    { nama: "Kopi hitam", harga: 8000, emoji: "☕" },
+    { nama: "Snack", harga: 7000, emoji: "🍿" },
+  ];
+
+  let keranjang = [];
+  let total = 0;
+
+  function rp(n) {
+    return "Rp " + Math.round(n).toLocaleString("id-ID");
+  }
+
+  function updateJam() {
+    const now = new Date();
+    document.getElementById("jamDisplay").textContent = now.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' });
+  }
+  updateJam();
+  setInterval(updateJam, 1000);
+
+  function renderProduk() {
+    const grid = document.getElementById("produkGrid");
+    grid.innerHTML = "";
+    produkDefault.forEach(p => {
+      const btn = document.createElement("button");
+      btn.className = "produk-btn";
+      btn.innerHTML = `
+        <div class="produk-img-wrap">
+          <div class="produk-img-placeholder">${p.emoji}</div>
+        </div>
+        <div class="produk-info">
+          <span class="produk-name">${p.nama}</span>
+          <span class="produk-price">${rp(p.harga)}</span>
+        </div>
+      `;
+      btn.onclick = () => tambahItem(p.nama, p.harga, p.emoji);
+      grid.appendChild(btn);
+    });
+  }
+
+  function tambahItem(nama, harga, emoji) {
+    const idx = keranjang.findIndex(k => k.nama === nama);
+    if (idx >= 0) keranjang[idx].qty += 1;
+    else keranjang.push({ nama, harga, emoji: emoji || "🛒", qty: 1 });
+    renderKeranjang();
+  }
+
+  function tambahCustom() {
+    const nama = document.getElementById("cNama").value.trim();
+    const harga = parseInt(document.getElementById("cHarga").value);
+    if (!nama || isNaN(harga) || harga <= 0) return;
+    tambahItem(nama, harga, "🛒");
+    document.getElementById("cNama").value = "";
+    document.getElementById("cHarga").value = "";
+  }
+
+  function ubahQty(idx, delta) {
+    keranjang[idx].qty += delta;
+    if (keranjang[idx].qty <= 0) keranjang.splice(idx, 1);
+    renderKeranjang();
+  }
+
+  function hapusItem(idx) {
+    keranjang.splice(idx, 1);
+    renderKeranjang();
+  }
+
+  function renderKeranjang() {
+    const list = document.getElementById("keranjangList");
+    list.innerHTML = "";
+    total = 0;
+
+    if (keranjang.length === 0) {
+      list.innerHTML = '<li class="empty-msg">Belum ada item</li>';
+    } else {
+      keranjang.forEach((item, i) => {
+        const sub = item.harga * item.qty;
+        total += sub;
+        const li = document.createElement("li");
+        li.className = "keranjang-item";
+        li.innerHTML = `
+          <div class="item-thumb">${item.emoji}</div>
+          <span class="item-name">${item.nama}</span>
+          <div class="item-qty">
+            <button class="qty-btn" onclick="ubahQty(${i}, -1)">−</button>
+            <span class="qty-num">${item.qty}</span>
+            <button class="qty-btn" onclick="ubahQty(${i}, +1)">+</button>
+          </div>
+          <span class="item-subtotal">${rp(sub)}</span>
+          <button class="item-del" onclick="hapusItem(${i})">✕</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById("subtotal").textContent = rp(total);
+    document.getElementById("totalDisplay").textContent = rp(total);
+    hitungKembalian();
+  }
+
+  function setNominal(n) {
+    document.getElementById("bayarInput").value = n;
+    hitungKembalian();
+  }
+
+  function tambahNominal(n) {
+    const cur = parseInt(document.getElementById("bayarInput").value) || 0;
+    document.getElementById("bayarInput").value = cur + n;
+    hitungKembalian();
+  }
+
+  function setBayarPas() {
+    document.getElementById("bayarInput").value = total;
+    hitungKembalian();
+  }
+
+  function hitungKembalian() {
+    const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
+    const kembalian = bayar - total;
+    document.getElementById("kembalianVal").textContent = kembalian >= 0 ? rp(kembalian) : "Kurang " + rp(-kembalian);
+    document.getElementById("btnBayar").disabled = !(total > 0 && bayar >= total);
+  }
+
+  function prosesBayar() {
+    const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
+    const kembalian = bayar - total;
+    document.getElementById("strukTanggal").textContent = new Date().toLocaleString("id-ID");
+    let html = "";
+    keranjang.forEach(item => {
+      html += `<div class="struk-item-row"><span>${item.nama} x${item.qty}</span><span>${rp(item.harga * item.qty)}</span></div>`;
+    });
+    document.getElementById("strukItems").innerHTML = html;
+    document.getElementById("strukTotal").textContent = rp(total);
+    document.getElementById("strukBayar").textContent = rp(bayar);
+    document.getElementById("strukKembalian").textContent = rp(kembalian);
+    document.getElementById("strukOverlay").classList.add("show");
+  }
+
+  function tutupStruk() {
+    document.getElementById("strukOverlay").classList.remove("show");
+    resetKasir();
+  }
+
+  function resetKasir() {
+    keranjang = [];
+    total = 0;
+    document.getElementById("bayarInput").value = "";
+    document.getElementById("kembalianVal").textContent = "Rp 0";
+    document.getElementById("btnBayar").disabled = true;
+    renderKeranjang();
+  }
+
+  renderProduk();
+  renderKeranjang();
+</script>
+</body>
+</html>
