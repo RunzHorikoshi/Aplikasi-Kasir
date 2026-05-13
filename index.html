@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Kasir Sederhana</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -17,8 +17,8 @@
       --accent: #f7931a;
       --accent-dark: #c97615;
       --accent-soft: rgba(247,147,26,0.12);
-      --radius: 12px;
-      --radius-sm: 8px;
+      --radius: 14px;
+      --radius-sm: 9px;
     }
 
     body {
@@ -26,83 +26,203 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      padding: 1rem;
+      /* No padding on mobile – panels handle their own spacing */
     }
 
+    /* ============================================================
+       HEADER
+    ============================================================ */
     header {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-bottom: 1.25rem;
-      max-width: 900px;
-      margin-left: auto;
-      margin-right: auto;
+      padding: 14px 16px 10px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
     }
 
     .logo {
-      width: 36px; height: 36px;
+      width: 34px; height: 34px;
       background: var(--accent);
-      border-radius: 10px;
+      border-radius: 9px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px; font-weight: 700; color: #fff;
+      font-size: 17px; font-weight: 700; color: #fff;
+      flex-shrink: 0;
     }
 
-    header h1 { font-size: 18px; font-weight: 600; }
-    header span { font-size: 13px; color: var(--muted); margin-left: auto; }
+    header h1 { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+    header .jam { font-size: 13px; color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
 
-    .wrap {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      max-width: 900px;
-      margin: 0 auto;
+    /* Nama toko row */
+    .nama-toko-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px 0;
     }
 
-    @media (max-width: 640px) {
-      .wrap { grid-template-columns: 1fr; gap: 10px; }
+    .nama-toko-row input {
+      flex: 1;
+      font-size: 13px;
+      padding: 8px 11px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface2);
+      color: var(--text);
+      outline: none;
+      min-width: 0;
+    }
+    .nama-toko-row input:focus { border-color: var(--accent); }
+    .nama-toko-row input::placeholder { color: var(--muted); }
 
-      body { padding: 0.6rem; }
+    .btn-simpan-toko {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 8px 13px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .btn-simpan-toko:hover { background: rgba(247,147,26,0.22); }
 
-      /* Produk card lebih compact di HP */
-      .produk-img-wrap { aspect-ratio: 3/2; }
-      .produk-img-placeholder { font-size: 22px; }
-      .produk-info { padding: 6px 8px; }
-      .produk-name { font-size: 12px; }
-      .produk-price { font-size: 11px; }
+    /* ============================================================
+       MAIN LAYOUT
+       Mobile: single column tabs
+       Desktop (≥768px): side-by-side, sticky keranjang
+    ============================================================ */
 
-      /* Nominal tombol 3 kolom biar ga rapet */
-      .nominal-grid { grid-template-columns: repeat(3, 1fr); }
-
-      /* Uang btn 2 kolom */
-      .nominal-uang-grid { grid-template-columns: repeat(2, 1fr); }
-
-      /* Total font lebih kecil sedikit */
-      .total-big { font-size: 17px; }
-      .kembalian-val { font-size: 17px; }
+    /* Mobile tab navigation */
+    .tab-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      position: sticky;
+      top: 57px; /* below header */
+      z-index: 40;
+      padding: 0 16px;
+      gap: 0;
     }
 
+    .tab-btn {
+      flex: 1;
+      padding: 10px 8px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Tab badge for keranjang count */
+    .tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 99px;
+      min-width: 17px;
+      height: 17px;
+      padding: 0 5px;
+      margin-left: 5px;
+      vertical-align: middle;
+    }
+
+    .tab-badge.hidden { display: none; }
+
+    .mobile-panels {
+      padding: 12px 16px 80px; /* bottom padding for thumb reach */
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ============================================================
+       DESKTOP: hide tabs, show side-by-side
+    ============================================================ */
+    @media (min-width: 768px) {
+      header { padding: 16px 24px 12px; }
+      .nama-toko-row { padding: 12px 24px 0; }
+
+      .tab-nav { display: none; }
+      .mobile-panels { display: none; }
+
+      .desktop-wrap {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 16px;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 16px 24px 24px;
+        align-items: start;
+      }
+
+      .desktop-left { min-width: 0; }
+
+      .desktop-right {
+        position: sticky;
+        top: 75px;
+        max-height: calc(100vh - 90px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .desktop-wrap { display: none; }
+    }
+
+    /* ============================================================
+       PANEL
+    ============================================================ */
     .panel {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 1.1rem;
+      padding: 14px;
+      margin-bottom: 12px;
     }
 
     .panel-title {
-      font-size: 11px;
-      font-weight: 600;
+      font-size: 10px;
+      font-weight: 700;
       color: var(--muted);
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      margin-bottom: 0.85rem;
+      margin-bottom: 12px;
     }
 
-    /* PRODUK GRID - pakai 2 kolom */
+    /* ============================================================
+       PRODUK GRID
+       Mobile: 3 columns compact cards
+       Desktop: 3-4 columns
+    ============================================================ */
     .produk-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin-bottom: 1rem;
+      margin-bottom: 12px;
+    }
+
+    @media (min-width: 768px) {
+      .produk-grid { grid-template-columns: repeat(4, 1fr); }
     }
 
     .produk-btn {
@@ -112,46 +232,67 @@
       padding: 0;
       cursor: pointer;
       text-align: left;
-      transition: border-color 0.15s, background 0.15s;
       overflow: hidden;
       display: flex;
       flex-direction: column;
-    }
-
-    .produk-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
-    .produk-btn:active { transform: scale(0.97); }
-
-    .produk-img-wrap {
-      width: 100%;
-      aspect-ratio: 4/3;
-      overflow: hidden;
-      background: var(--border);
       position: relative;
+      transition: border-color 0.15s, transform 0.12s;
     }
 
-    .produk-img-wrap img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+    .produk-btn:hover { border-color: var(--accent); }
+    .produk-btn:active { transform: scale(0.95); }
 
-    .produk-img-placeholder {
-      width: 100%; height: 100%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 28px;
+    .produk-emoji-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
       background: var(--surface2);
     }
 
-    .produk-info { padding: 8px 10px; }
-    .produk-name { font-size: 13px; font-weight: 500; color: var(--text); display: block; }
-    .produk-price { font-size: 12px; color: var(--accent); display: block; margin-top: 2px; font-weight: 600; }
+    @media (min-width: 768px) {
+      .produk-emoji-wrap { font-size: 32px; }
+    }
 
+    .produk-info {
+      padding: 6px 8px 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .produk-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .produk-price {
+      font-size: 11px;
+      color: var(--accent);
+      display: block;
+      margin-top: 2px;
+      font-weight: 700;
+    }
+
+    @media (min-width: 768px) {
+      .produk-name { font-size: 13px; }
+      .produk-price { font-size: 12px; }
+    }
+
+    /* ============================================================
+       TAMBAH CUSTOM
+    ============================================================ */
     .custom-row { display: flex; gap: 6px; }
 
     .custom-row input {
       flex: 1;
       font-size: 13px;
-      padding: 8px 10px;
+      padding: 9px 10px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       background: var(--surface2);
@@ -167,18 +308,19 @@
       background: var(--accent-soft);
       border: 1px solid var(--accent);
       border-radius: var(--radius-sm);
-      padding: 8px 12px;
+      padding: 9px 13px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       color: var(--accent);
       white-space: nowrap;
-      transition: background 0.15s;
     }
-
     .btn-add:hover { background: rgba(247,147,26,0.22); }
 
-    .keranjang-list { list-style: none; min-height: 60px; }
+    /* ============================================================
+       KERANJANG
+    ============================================================ */
+    .keranjang-list { list-style: none; min-height: 50px; }
 
     .keranjang-item {
       display: flex;
@@ -187,110 +329,147 @@
       border-bottom: 1px solid var(--border);
       gap: 8px;
     }
-
     .keranjang-item:last-child { border-bottom: none; }
 
     .item-thumb {
-      width: 36px; height: 36px;
-      border-radius: 6px;
-      object-fit: cover;
+      width: 34px; height: 34px;
+      border-radius: 7px;
       background: var(--surface2);
       flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       font-size: 18px;
-      overflow: hidden;
     }
 
-    .item-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+    .item-name {
+      font-size: 13px;
+      color: var(--text);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-    .item-name { font-size: 13px; color: var(--text); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    .item-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .item-qty { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
 
     .qty-btn {
-      width: 26px; height: 26px;
+      width: 28px; height: 28px;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 7px;
       background: var(--surface2);
       color: var(--text);
       cursor: pointer;
-      font-size: 15px;
+      font-size: 16px;
       display: flex; align-items: center; justify-content: center;
-      transition: border-color 0.1s;
+      transition: border-color 0.1s, color 0.1s;
+      line-height: 1;
     }
-
     .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .qty-num { font-size: 13px; min-width: 20px; text-align: center; font-weight: 600; }
-    .item-subtotal { font-size: 12px; color: var(--accent); min-width: 65px; text-align: right; font-weight: 600; flex-shrink: 0; }
+
+    .qty-num { font-size: 13px; min-width: 20px; text-align: center; font-weight: 700; }
+    .item-subtotal { font-size: 12px; color: var(--accent); min-width: 62px; text-align: right; font-weight: 700; flex-shrink: 0; }
 
     .item-del {
       background: none; border: none; cursor: pointer;
-      color: var(--muted); font-size: 15px; padding: 2px 4px;
+      color: var(--muted); font-size: 14px; padding: 2px 4px;
       flex-shrink: 0; transition: color 0.1s;
     }
     .item-del:hover { color: #e05c5c; }
 
     .empty-msg { font-size: 13px; color: var(--muted); text-align: center; padding: 1.5rem 0; }
 
-    .total-section { border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 1rem; }
-    .total-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
-    .total-big { display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+    /* ============================================================
+       TOTAL & BAYAR
+    ============================================================ */
+    .total-section { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
 
-    .bayar-section { margin-top: 1rem; }
-    .bayar-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; }
-
-    /* NOMINAL CEPAT */
-    .nominal-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      margin-bottom: 8px;
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 5px;
     }
 
-    .nominal-btn {
-      background: var(--surface2);
+    .total-big {
+      display: flex;
+      justify-content: space-between;
+      font-size: 19px;
+      font-weight: 800;
+      color: var(--accent);
+      margin-top: 4px;
+    }
+
+    /* PROMO */
+    .promo-section { margin-top: 12px; }
+    .bayar-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    .promo-row { display: flex; gap: 6px; }
+    .promo-row input {
+      flex: 1;
+      font-size: 13px;
+      padding: 9px 10px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 7px 4px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--muted);
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.15s;
-      white-space: nowrap;
+      background: var(--surface2);
+      color: var(--text);
+      outline: none;
     }
+    .promo-row input:focus { border-color: var(--accent); }
+    .promo-row input::placeholder { color: var(--muted); }
 
-    .nominal-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-    .nominal-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    /* BAYAR SECTION */
+    .bayar-section { margin-top: 12px; }
 
+    /* Nominal uang: 3 kolom di semua ukuran */
     .nominal-uang-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 6px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .uang-btn {
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 8px 6px;
+      padding: 9px 4px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text);
       cursor: pointer;
       text-align: center;
       transition: all 0.15s;
     }
-
     .uang-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+    /* Tambah nominal: 4 kolom */
+    .nominal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .nominal-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .nominal-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
     .bayar-input {
       width: 100%;
       font-size: 18px;
-      font-weight: 600;
-      padding: 10px 12px;
+      font-weight: 700;
+      padding: 11px 13px;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
       background: var(--surface2);
@@ -298,9 +477,8 @@
       margin-bottom: 10px;
       outline: none;
     }
-
     .bayar-input:focus { border-color: var(--accent); }
-    .bayar-input::placeholder { color: var(--muted); font-weight: 400; font-size: 15px; }
+    .bayar-input::placeholder { color: var(--muted); font-weight: 400; font-size: 14px; }
 
     .kembalian-box {
       background: var(--accent-soft);
@@ -313,14 +491,14 @@
       margin-bottom: 12px;
     }
 
-    .kembalian-label { font-size: 13px; color: var(--accent); font-weight: 500; }
-    .kembalian-val { font-size: 20px; font-weight: 700; color: var(--accent); }
+    .kembalian-label { font-size: 12px; color: var(--accent); font-weight: 600; }
+    .kembalian-val { font-size: 19px; font-weight: 800; color: var(--accent); }
 
     .btn-bayar {
       width: 100%;
-      padding: 13px;
+      padding: 14px;
       font-size: 15px;
-      font-weight: 700;
+      font-weight: 800;
       background: var(--accent);
       color: #fff;
       border: none;
@@ -329,7 +507,6 @@
       transition: background 0.15s, transform 0.1s;
       letter-spacing: 0.02em;
     }
-
     .btn-bayar:hover { background: var(--accent-dark); }
     .btn-bayar:active { transform: scale(0.98); }
     .btn-bayar:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; border: 1px solid var(--border); }
@@ -337,7 +514,7 @@
     .btn-reset {
       width: 100%;
       padding: 10px;
-      font-size: 13px;
+      font-size: 12px;
       background: none;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
@@ -346,13 +523,46 @@
       margin-top: 8px;
       transition: border-color 0.15s;
     }
-
     .btn-reset:hover { border-color: #555; color: var(--text); }
 
-    /* TOAST */
+    /* ============================================================
+       RIWAYAT
+    ============================================================ */
+    .omzet-bar {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .omzet-stat { flex: 1; min-width: 100px; }
+    .omzet-stat-label { font-size: 10px; color: var(--muted); margin-bottom: 2px; }
+    .omzet-stat-val { font-size: 15px; font-weight: 800; color: var(--accent); }
+    .omzet-stat-val.neutral { color: var(--text); }
+
+    .riwayat-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: var(--surface2);
+    }
+    .riwayat-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+    .riwayat-tgl { font-size: 11px; color: var(--muted); }
+    .riwayat-total { font-size: 14px; font-weight: 800; color: var(--accent); }
+    .riwayat-items { font-size: 11px; color: var(--muted); }
+    .riwayat-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0 4px; }
+    .riwayat-del:hover { color: #e05c5c; }
+
+    /* ============================================================
+       TOAST
+    ============================================================ */
     .toast {
       position: fixed;
-      bottom: 24px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%) translateY(20px);
       background: var(--accent);
@@ -360,53 +570,38 @@
       padding: 9px 18px;
       border-radius: 99px;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s, transform 0.2s;
-      z-index: 200;
+      z-index: 300;
       white-space: nowrap;
     }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* NAMA TOKO */
-    .nama-toko-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 1.25rem;
-      max-width: 900px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    /* KONFIRMASI */
+    /* ============================================================
+       KONFIRMASI OVERLAY
+    ============================================================ */
     .konfirmasi-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.55);
-      z-index: 150;
+      background: rgba(0,0,0,0.6);
+      z-index: 200;
       align-items: center;
       justify-content: center;
+      padding: 16px;
     }
     .konfirmasi-overlay.show { display: flex; }
+
     .konfirmasi-card {
       background: var(--surface);
-      border-radius: 14px;
-      padding: 1.5rem;
-      width: min(90%, 340px);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      width: min(100%, 340px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
     }
-    .konfirmasi-title {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
+    .konfirmasi-title { font-size: 16px; font-weight: 800; margin-bottom: 1rem; text-align: center; }
     .konfirmasi-detail {
       background: var(--surface2);
       border-radius: 10px;
@@ -416,77 +611,27 @@
       margin-bottom: 1.2rem;
     }
     .konfirmasi-actions { display: flex; gap: 8px; }
-    .btn-batal { flex: 1; padding: 10px; border: 1px solid var(--border); background: none; color: var(--text); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .btn-konfirmasi { flex: 2; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .btn-batal { flex: 1; padding: 11px; border: 1px solid var(--border); background: none; color: var(--text); border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-konfirmasi { flex: 2; padding: 11px; background: var(--accent); color: #fff; border: none; border-radius: 9px; font-size: 14px; font-weight: 800; cursor: pointer; }
 
-    /* RIWAYAT */
-    .riwayat-item {
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      margin-bottom: 8px;
-      background: var(--surface2);
-    }
-    .riwayat-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .riwayat-tgl { font-size: 11px; color: var(--muted); }
-    .riwayat-total { font-size: 14px; font-weight: 700; color: var(--accent); }
-    .riwayat-items { font-size: 12px; color: var(--muted); }
-    .riwayat-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0 4px; }
-    .riwayat-del:hover { color: #e05c5c; }
-
-    @keyframes confettiFall {
-      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-    }
-
-    /* === ANIMASI === */
-
-    /* Ripple produk btn */
-    .produk-btn { position: relative; overflow: hidden; }
-    .produk-btn::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: rgba(255,255,255,0.15);
-      opacity: 0;
-      border-radius: inherit;
-      transition: opacity 0.3s;
-    }
-    .produk-btn:active::after { opacity: 1; }
-    .produk-btn { transition: transform 0.12s; }
-    .produk-btn:active { transform: scale(0.95); }
-
-    /* Slide-in keranjang item */
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateX(-18px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-    .keranjang-item { animation: slideIn 0.22s ease; }
-
-    /* Total flash */
-    @keyframes flashTotal {
-      0%   { color: var(--accent); transform: scale(1.08); }
-      100% { color: var(--text);   transform: scale(1); }
-    }
-    .total-flash { animation: flashTotal 0.4s ease; }
-
-    /* STRUK */
+    /* ============================================================
+       STRUK
+    ============================================================ */
     .struk-overlay {
       display: none;
       position: fixed; inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.75);
       align-items: center;
       justify-content: center;
-      z-index: 100;
-      padding: 1rem;
+      z-index: 200;
+      padding: 16px;
     }
+    .struk-overlay.show { display: flex; }
 
-    /* Struk slide-up */
     @keyframes slideUp {
       from { opacity: 0; transform: translateY(40px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .struk-overlay.show { display: flex; }
     .struk-overlay.show .struk-card { animation: slideUp 0.28s cubic-bezier(0.22,1,0.36,1); }
 
     .struk-card {
@@ -498,18 +643,16 @@
       max-width: 100%;
       font-family: 'Courier New', monospace;
     }
-
     .struk-header { text-align: center; padding-bottom: 1rem; border-bottom: 1px dashed #ccc; margin-bottom: 1rem; }
     .struk-toko { font-size: 16px; font-weight: 700; }
     .struk-sub { font-size: 11px; color: #666; margin-top: 2px; }
     .struk-item-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; }
-    .struk-item-row span:last-child { color: #444; }
     hr.struk-divider { border: none; border-top: 1px dashed #ccc; margin: 8px 0; }
     .struk-total-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; }
     .struk-kmb-row { display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-top: 4px; }
     .struk-footer { text-align: center; font-size: 11px; color: #888; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #ccc; }
     .struk-actions { display: flex; gap: 8px; margin-top: 1rem; }
-    .struk-actions button { flex: 1; padding: 9px 4px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .struk-actions button { flex: 1; padding: 10px 4px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 700; }
     .btn-print { background: #111; color: #fff; border: none; }
     .btn-share-wa { background: #25D366; color: #fff; border: none; }
     .btn-close-struk { background: none; border: 1px solid #ccc; color: #333; }
@@ -518,22 +661,36 @@
       body * { visibility: hidden; }
       .struk-overlay, .struk-overlay * { visibility: visible; }
       .struk-overlay {
-        position: fixed !important;
-        inset: 0 !important;
-        background: none !important;
-        display: flex !important;
-        align-items: flex-start !important;
-        justify-content: center !important;
+        position: fixed !important; inset: 0 !important;
+        background: none !important; display: flex !important;
+        align-items: flex-start !important; justify-content: center !important;
       }
       .struk-card {
-        box-shadow: none !important;
-        border: none !important;
-        width: 80mm !important;
-        padding: 10px !important;
-        color: #000 !important;
+        box-shadow: none !important; border: none !important;
+        width: 80mm !important; padding: 10px !important; color: #000 !important;
       }
       .struk-actions { display: none !important; }
     }
+
+    /* ============================================================
+       ANIMATIONS
+    ============================================================ */
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .keranjang-item { animation: slideIn 0.2s ease; }
+
+    @keyframes flashTotal {
+      0%   { color: #fff; transform: scale(1.06); }
+      100% { color: var(--accent); transform: scale(1); }
+    }
+    .total-flash { animation: flashTotal 0.35s ease; }
   </style>
 </head>
 <body>
@@ -541,52 +698,66 @@
 <header>
   <div class="logo">₿</div>
   <h1 id="namaTokoDisplay">Kasir Sederhana</h1>
-  <span id="jamDisplay"></span>
+  <span class="jam" id="jamDisplay"></span>
 </header>
 
-<div class="nama-toko-row" style="max-width:900px;margin:0 auto 1rem;display:flex;gap:6px;align-items:center;">
-  <input type="text" id="inputNamaToko" placeholder="Nama toko..." style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);outline:none;" />
-  <button onclick="simpanNamaToko()" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;">Simpan</button>
+<div class="nama-toko-row">
+  <input type="text" id="inputNamaToko" placeholder="Nama toko..." />
+  <button class="btn-simpan-toko" onclick="simpanNamaToko()">Simpan</button>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- Mobile: tab navigation -->
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('produk')">🛒 Produk</button>
+  <button class="tab-btn" onclick="switchTab('keranjang')">Keranjang <span class="tab-badge hidden" id="tabBadge">0</span></button>
+  <button class="tab-btn" onclick="switchTab('riwayat')">Riwayat</button>
+</nav>
 
-<div class="wrap">
-  <div class="panel">
-    <div class="panel-title">Produk</div>
-    <div class="produk-grid" id="produkGrid"></div>
-    <div class="panel-title">Tambah produk lain</div>
-    <div class="custom-row">
-      <input type="text" id="cNama" placeholder="Nama produk" />
-      <input type="number" id="cHarga" placeholder="Harga" min="0" inputmode="numeric" />
-      <button class="btn-add" onclick="tambahCustom()">+ Tambah</button>
+<!-- Mobile panels -->
+<div class="mobile-panels">
+
+  <!-- TAB: Produk -->
+  <div class="tab-panel active" id="tab-produk">
+    <div class="panel">
+      <div class="panel-title">Produk</div>
+      <div class="produk-grid" id="produkGridMobile"></div>
+      <div class="panel-title" style="margin-top:4px;">Tambah produk lain</div>
+      <div class="custom-row">
+        <input type="text" id="cNamaMobile" placeholder="Nama produk" />
+        <input type="number" id="cHargaMobile" placeholder="Harga" min="0" inputmode="numeric" style="max-width:90px;" />
+        <button class="btn-add" onclick="tambahCustom('mobile')">+ Tambah</button>
+      </div>
     </div>
   </div>
 
-  <div class="panel">
-    <div class="panel-title">Keranjang</div>
-    <ul class="keranjang-list" id="keranjangList">
-      <li class="empty-msg">Belum ada item</li>
-    </ul>
-    <div class="total-section">
-      <div class="total-row"><span>Subtotal</span><span id="subtotal">Rp 0</span></div>
-      <div class="total-row" id="diskonRow" style="display:none;color:var(--accent);">
-        <span>Diskon 50% 🎉</span><span id="diskonDisplay">- Rp 0</span>
+  <!-- TAB: Keranjang -->
+  <div class="tab-panel" id="tab-keranjang">
+    <div class="panel">
+      <div class="panel-title">Keranjang</div>
+      <ul class="keranjang-list" id="keranjangListMobile">
+        <li class="empty-msg">Belum ada item</li>
+      </ul>
+      <div class="total-section">
+        <div class="total-row"><span>Subtotal</span><span id="subtotalMobile">Rp 0</span></div>
+        <div class="total-row" id="diskonRowMobile" style="display:none;color:var(--accent);">
+          <span>Diskon 50% 🎉</span><span id="diskonDisplayMobile">- Rp 0</span>
+        </div>
+        <div class="total-big"><span>Total</span><span id="totalDisplayMobile" class="total-flash">Rp 0</span></div>
       </div>
-      <div class="total-big"><span>Total</span><span id="totalDisplay">Rp 0</span></div>
     </div>
-    <div class="promo-section" style="margin-top:0.8rem;">
-      <div class="bayar-label">Kode promo</div>
-      <div style="display:flex;gap:6px;">
-        <input type="text" id="kodePromo" placeholder="Masukkan kode promo..." style="flex:1;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);outline:none;" />
-        <button onclick="terapkanPromo()" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;">Pakai</button>
-      </div>
-      <div id="promoMsg" style="font-size:12px;margin-top:5px;"></div>
-    </div>
-    <div class="bayar-section">
-      <div class="bayar-label">Uang dibayar</div>
 
-      <!-- Tombol nominal cepat -->
+    <div class="panel">
+      <div class="panel-title">Kode Promo</div>
+      <div class="promo-row">
+        <input type="text" id="kodePromoMobile" placeholder="Masukkan kode promo..." />
+        <button class="btn-add" onclick="terapkanPromo('mobile')">Pakai</button>
+      </div>
+      <div id="promoMsgMobile" style="font-size:12px;margin-top:5px;"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Pembayaran</div>
+      <div class="bayar-label">Pilih nominal</div>
       <div class="nominal-uang-grid">
         <button class="uang-btn" onclick="setNominal(5000)">Rp 5.000</button>
         <button class="uang-btn" onclick="setNominal(10000)">Rp 10.000</button>
@@ -595,52 +766,127 @@
         <button class="uang-btn" onclick="setNominal(100000)">Rp 100.000</button>
         <button class="uang-btn" onclick="setBayarPas()">Uang pas</button>
       </div>
-
-      <!-- Tombol tambah nominal -->
+      <div class="bayar-label">Tambah nominal</div>
       <div class="nominal-grid">
         <button class="nominal-btn" onclick="tambahNominal(5000)">+5rb</button>
         <button class="nominal-btn" onclick="tambahNominal(10000)">+10rb</button>
         <button class="nominal-btn" onclick="tambahNominal(20000)">+20rb</button>
         <button class="nominal-btn" onclick="tambahNominal(50000)">+50rb</button>
       </div>
-
-      <input class="bayar-input" type="number" id="bayarInput" placeholder="Atau ketik nominal..." min="0" inputmode="numeric" oninput="hitungKembalian()" />
-
+      <input class="bayar-input" type="number" id="bayarInputMobile" placeholder="Atau ketik nominal..." min="0" inputmode="numeric" oninput="hitungKembalian()" />
       <div class="kembalian-box">
         <span class="kembalian-label">Kembalian</span>
-        <span class="kembalian-val" id="kembalianVal">Rp 0</span>
+        <span class="kembalian-val" id="kembalianValMobile">Rp 0</span>
       </div>
-      <button class="btn-bayar" id="btnBayar" onclick="showKonfirmasi()" disabled>Bayar Sekarang</button>
+      <button class="btn-bayar" id="btnBayarMobile" onclick="showKonfirmasi()" disabled>Bayar Sekarang</button>
+      <button class="btn-reset" onclick="resetKasir()">Reset transaksi</button>
+    </div>
+  </div>
+
+  <!-- TAB: Riwayat -->
+  <div class="tab-panel" id="tab-riwayat">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="panel-title" style="margin-bottom:0;">Riwayat Transaksi</div>
+        <button onclick="hapusSemuaRiwayat()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;">Hapus semua</button>
+      </div>
+      <div id="omzetBarMobile" style="display:none;" class="omzet-bar">
+        <div class="omzet-stat"><div class="omzet-stat-label">Transaksi</div><div class="omzet-stat-val" id="omzetJumlahMobile">0</div></div>
+        <div class="omzet-stat"><div class="omzet-stat-label">Total Omzet</div><div class="omzet-stat-val" id="omzetTotalMobile">Rp 0</div></div>
+        <div class="omzet-stat"><div class="omzet-stat-label">Rata-rata</div><div class="omzet-stat-val neutral" id="omzetRataMobile">Rp 0</div></div>
+      </div>
+      <div id="riwayatListMobile"><p class="empty-msg">Belum ada transaksi</p></div>
+    </div>
+  </div>
+
+</div>
+<!-- /mobile-panels -->
+
+<!-- Desktop layout -->
+<div class="desktop-wrap">
+  <div class="desktop-left">
+    <!-- Produk -->
+    <div class="panel">
+      <div class="panel-title">Produk</div>
+      <div class="produk-grid" id="produkGridDesktop"></div>
+      <div class="panel-title" style="margin-top:4px;">Tambah produk lain</div>
+      <div class="custom-row">
+        <input type="text" id="cNamaDesktop" placeholder="Nama produk" />
+        <input type="number" id="cHargaDesktop" placeholder="Harga" min="0" inputmode="numeric" style="max-width:110px;" />
+        <button class="btn-add" onclick="tambahCustom('desktop')">+ Tambah</button>
+      </div>
+    </div>
+
+    <!-- Riwayat (desktop: below produk) -->
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div class="panel-title" style="margin-bottom:0;">Riwayat Transaksi</div>
+        <button onclick="hapusSemuaRiwayat()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;">Hapus semua</button>
+      </div>
+      <div id="omzetBarDesktop" style="display:none;" class="omzet-bar">
+        <div class="omzet-stat"><div class="omzet-stat-label">Transaksi</div><div class="omzet-stat-val" id="omzetJumlahDesktop">0</div></div>
+        <div class="omzet-stat"><div class="omzet-stat-label">Total Omzet</div><div class="omzet-stat-val" id="omzetTotalDesktop">Rp 0</div></div>
+        <div class="omzet-stat"><div class="omzet-stat-label">Rata-rata</div><div class="omzet-stat-val neutral" id="omzetRataDesktop">Rp 0</div></div>
+      </div>
+      <div id="riwayatListDesktop"><p class="empty-msg">Belum ada transaksi</p></div>
+    </div>
+  </div>
+
+  <div class="desktop-right">
+    <!-- Keranjang -->
+    <div class="panel">
+      <div class="panel-title">Keranjang</div>
+      <ul class="keranjang-list" id="keranjangListDesktop">
+        <li class="empty-msg">Belum ada item</li>
+      </ul>
+      <div class="total-section">
+        <div class="total-row"><span>Subtotal</span><span id="subtotalDesktop">Rp 0</span></div>
+        <div class="total-row" id="diskonRowDesktop" style="display:none;color:var(--accent);">
+          <span>Diskon 50% 🎉</span><span id="diskonDisplayDesktop">- Rp 0</span>
+        </div>
+        <div class="total-big"><span>Total</span><span id="totalDisplayDesktop">Rp 0</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Kode Promo</div>
+      <div class="promo-row">
+        <input type="text" id="kodePromoDesktop" placeholder="Masukkan kode promo..." />
+        <button class="btn-add" onclick="terapkanPromo('desktop')">Pakai</button>
+      </div>
+      <div id="promoMsgDesktop" style="font-size:12px;margin-top:5px;"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Pembayaran</div>
+      <div class="bayar-label">Pilih nominal</div>
+      <div class="nominal-uang-grid">
+        <button class="uang-btn" onclick="setNominal(5000)">Rp 5.000</button>
+        <button class="uang-btn" onclick="setNominal(10000)">Rp 10.000</button>
+        <button class="uang-btn" onclick="setNominal(20000)">Rp 20.000</button>
+        <button class="uang-btn" onclick="setNominal(50000)">Rp 50.000</button>
+        <button class="uang-btn" onclick="setNominal(100000)">Rp 100.000</button>
+        <button class="uang-btn" onclick="setBayarPas()">Uang pas</button>
+      </div>
+      <div class="bayar-label">Tambah nominal</div>
+      <div class="nominal-grid">
+        <button class="nominal-btn" onclick="tambahNominal(5000)">+5rb</button>
+        <button class="nominal-btn" onclick="tambahNominal(10000)">+10rb</button>
+        <button class="nominal-btn" onclick="tambahNominal(20000)">+20rb</button>
+        <button class="nominal-btn" onclick="tambahNominal(50000)">+50rb</button>
+      </div>
+      <input class="bayar-input" type="number" id="bayarInputDesktop" placeholder="Atau ketik nominal..." min="0" inputmode="numeric" oninput="hitungKembalian()" />
+      <div class="kembalian-box">
+        <span class="kembalian-label">Kembalian</span>
+        <span class="kembalian-val" id="kembalianValDesktop">Rp 0</span>
+      </div>
+      <button class="btn-bayar" id="btnBayarDesktop" onclick="showKonfirmasi()" disabled>Bayar Sekarang</button>
       <button class="btn-reset" onclick="resetKasir()">Reset transaksi</button>
     </div>
   </div>
 </div>
 
-<!-- RIWAYAT TRANSAKSI -->
-<div style="max-width:900px;margin:14px auto 2rem;">
-  <div class="panel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem;">
-      <div class="panel-title" style="margin-bottom:0;">Riwayat Transaksi</div>
-      <button onclick="hapusSemuaRiwayat()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;">Hapus semua</button>
-    </div>
-    <!-- OMZET SUMMARY -->
-    <div id="omzetBar" style="display:none;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:120px;">
-        <div style="font-size:11px;color:var(--muted);">Total Transaksi</div>
-        <div style="font-size:16px;font-weight:700;color:var(--accent);" id="omzetJumlah">0</div>
-      </div>
-      <div style="flex:1;min-width:120px;">
-        <div style="font-size:11px;color:var(--muted);">Total Omzet</div>
-        <div style="font-size:16px;font-weight:700;color:var(--accent);" id="omzetTotal">Rp 0</div>
-      </div>
-      <div style="flex:1;min-width:120px;">
-        <div style="font-size:11px;color:var(--muted);">Rata-rata / Transaksi</div>
-        <div style="font-size:16px;font-weight:700;" id="omzetRata">Rp 0</div>
-      </div>
-    </div>
-    <div id="riwayatList"><p class="empty-msg">Belum ada transaksi</p></div>
-  </div>
-</div>
+<div class="toast" id="toast"></div>
 
 <!-- KONFIRMASI BAYAR -->
 <div class="konfirmasi-overlay" id="konfirmasiOverlay">
@@ -654,6 +900,7 @@
   </div>
 </div>
 
+<!-- STRUK -->
 <div class="struk-overlay" id="strukOverlay">
   <div class="struk-card">
     <div class="struk-header">
@@ -684,43 +931,81 @@
     { nama: "Snack", harga: 7000, emoji: "🍿" },
   ];
 
-  // Load produk custom dari localStorage
   let produkCustom = JSON.parse(localStorage.getItem("produkCustom") || "[]");
-
-  function simpanProdukCustom() {
-    localStorage.setItem("produkCustom", JSON.stringify(produkCustom));
-  }
-
   let keranjang = [];
   let total = 0;
   let diskonAktif = false;
+  let riwayat = JSON.parse(localStorage.getItem("riwayatTransaksi") || "[]");
 
-  function rp(n) {
-    return "Rp " + Math.round(n).toLocaleString("id-ID");
+  // ── Helpers ────────────────────────────────────────────────
+  function rp(n) { return "Rp " + Math.round(n).toLocaleString("id-ID"); }
+
+  function isMobile() { return window.innerWidth < 768; }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 1800);
   }
 
+  // ── Clock ──────────────────────────────────────────────────
   function updateJam() {
-    const now = new Date();
-    document.getElementById("jamDisplay").textContent = now.toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' });
+    document.getElementById("jamDisplay").textContent =
+      new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
   }
   updateJam();
   setInterval(updateJam, 1000);
 
-  function renderProduk() {
-    const grid = document.getElementById("produkGrid");
+  // ── Tab (mobile) ───────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll(".tab-btn").forEach((b, i) => {
+      const tabs = ["produk", "keranjang", "riwayat"];
+      b.classList.toggle("active", tabs[i] === tab);
+    });
+    document.querySelectorAll(".tab-panel").forEach(p => {
+      p.classList.toggle("active", p.id === "tab-" + tab);
+    });
+  }
+
+  function updateTabBadge() {
+    const count = keranjang.reduce((s, i) => s + i.qty, 0);
+    const badge = document.getElementById("tabBadge");
+    badge.textContent = count;
+    badge.classList.toggle("hidden", count === 0);
+  }
+
+  // ── Nama Toko ──────────────────────────────────────────────
+  function simpanNamaToko() {
+    const val = document.getElementById("inputNamaToko").value.trim();
+    if (!val) return;
+    document.getElementById("namaTokoDisplay").textContent = val;
+    localStorage.setItem("namaToko", val);
+    showToast("✅ Nama toko disimpan");
+  }
+
+  function loadNamaToko() {
+    const saved = localStorage.getItem("namaToko");
+    if (saved) {
+      document.getElementById("namaTokoDisplay").textContent = saved;
+      document.getElementById("inputNamaToko").value = saved;
+    }
+  }
+
+  // ── Render Produk ──────────────────────────────────────────
+  function buildProdukGrid(containerId) {
+    const grid = document.getElementById(containerId);
     grid.innerHTML = "";
+
     produkDefault.forEach(p => {
       const btn = document.createElement("button");
       btn.className = "produk-btn";
       btn.innerHTML = `
-        <div class="produk-img-wrap">
-          <div class="produk-img-placeholder">${p.emoji}</div>
-        </div>
+        <div class="produk-emoji-wrap">${p.emoji}</div>
         <div class="produk-info">
           <span class="produk-name">${p.nama}</span>
           <span class="produk-price">${rp(p.harga)}</span>
-        </div>
-      `;
+        </div>`;
       btn.onclick = () => tambahItem(p.nama, p.harga, p.emoji);
       grid.appendChild(btn);
     });
@@ -731,27 +1016,32 @@
 
       const btn = document.createElement("button");
       btn.className = "produk-btn";
+      btn.style.width = "100%";
       btn.innerHTML = `
-        <div class="produk-img-wrap">
-          <div class="produk-img-placeholder">${p.emoji}</div>
-        </div>
+        <div class="produk-emoji-wrap">${p.emoji}</div>
         <div class="produk-info">
           <span class="produk-name">${p.nama}</span>
           <span class="produk-price">${rp(p.harga)}</span>
-        </div>
-      `;
+        </div>`;
       btn.onclick = () => tambahItem(p.nama, p.harga, p.emoji);
 
-      const delBtn = document.createElement("button");
-      delBtn.textContent = "✕";
-      delBtn.style.cssText = "position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;";
-      delBtn.onclick = (e) => { e.stopPropagation(); hapusProdukCustom(i); };
+      const del = document.createElement("button");
+      del.textContent = "✕";
+      del.style.cssText = "position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.6);border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;";
+      del.onclick = (e) => { e.stopPropagation(); hapusProdukCustom(i); };
 
       wrap.appendChild(btn);
-      wrap.appendChild(delBtn);
+      wrap.appendChild(del);
       grid.appendChild(wrap);
     });
   }
+
+  function renderProduk() {
+    buildProdukGrid("produkGridMobile");
+    buildProdukGrid("produkGridDesktop");
+  }
+
+  function simpanProdukCustom() { localStorage.setItem("produkCustom", JSON.stringify(produkCustom)); }
 
   function hapusProdukCustom(i) {
     if (!confirm("Hapus produk \"" + produkCustom[i].nama + "\"?")) return;
@@ -761,62 +1051,10 @@
     showToast("🗑️ Produk dihapus");
   }
 
-  // PROMO
-  function terapkanPromo() {
-    const kode = document.getElementById("kodePromo").value.trim();
-    const msg = document.getElementById("promoMsg");
-    if (kode === "AplikasiKasir67") {
-      diskonAktif = true;
-      msg.style.color = "var(--accent)";
-      msg.textContent = "✅ Kode promo berhasil! Diskon 50% diterapkan.";
-      showToast("🎉 Diskon 50% aktif!");
-    } else {
-      diskonAktif = false;
-      msg.style.color = "#e05c5c";
-      msg.textContent = "❌ Kode promo tidak valid.";
-    }
-    renderKeranjang();
-  }
-
-  // TOAST
-  function showToast(msg) {
-    const t = document.getElementById("toast");
-    t.textContent = msg;
-    t.classList.add("show");
-    setTimeout(() => t.classList.remove("show"), 1800);
-  }
-
-  // NAMA TOKO
-  function simpanNamaToko() {
-    const val = document.getElementById("inputNamaToko").value.trim();
-    if (!val) return;
-    document.getElementById("namaTokoDisplay").textContent = val;
-    localStorage.setItem("namaToko", val);
-    showToast("✅ Nama toko disimpan");
-  }
-
-  // Load nama toko dari localStorage
-  function loadNamaToko() {
-    const saved = localStorage.getItem("namaToko");
-    if (saved) {
-      document.getElementById("namaTokoDisplay").textContent = saved;
-      document.getElementById("inputNamaToko").value = saved;
-    }
-  }
-
-  function tambahItem(nama, harga, emoji) {
-    const idx = keranjang.findIndex(k => k.nama === nama);
-    if (idx >= 0) keranjang[idx].qty += 1;
-    else keranjang.push({ nama, harga, emoji: emoji || "🛒", qty: 1 });
-    showToast("🛒 " + nama + " ditambahkan");
-    renderKeranjang();
-  }
-
-  function tambahCustom() {
-    const nama = document.getElementById("cNama").value.trim();
-    const harga = parseInt(document.getElementById("cHarga").value);
+  function tambahCustom(ctx) {
+    const nama = document.getElementById("cNama" + (ctx === "mobile" ? "Mobile" : "Desktop")).value.trim();
+    const harga = parseInt(document.getElementById("cHarga" + (ctx === "mobile" ? "Mobile" : "Desktop")).value);
     if (!nama || isNaN(harga) || harga <= 0) return;
-    // Simpan ke produkCustom kalau belum ada
     const sudahAda = [...produkDefault, ...produkCustom].find(p => p.nama === nama);
     if (!sudahAda) {
       produkCustom.push({ nama, harga, emoji: "🛒" });
@@ -824,8 +1062,17 @@
       renderProduk();
     }
     tambahItem(nama, harga, "🛒");
-    document.getElementById("cNama").value = "";
-    document.getElementById("cHarga").value = "";
+    document.getElementById("cNama" + (ctx === "mobile" ? "Mobile" : "Desktop")).value = "";
+    document.getElementById("cHarga" + (ctx === "mobile" ? "Mobile" : "Desktop")).value = "";
+  }
+
+  // ── Keranjang ──────────────────────────────────────────────
+  function tambahItem(nama, harga, emoji) {
+    const idx = keranjang.findIndex(k => k.nama === nama);
+    if (idx >= 0) keranjang[idx].qty += 1;
+    else keranjang.push({ nama, harga, emoji: emoji || "🛒", qty: 1 });
+    showToast("🛒 " + nama + " ditambahkan");
+    renderKeranjang();
   }
 
   function ubahQty(idx, delta) {
@@ -840,17 +1087,15 @@
     renderKeranjang();
   }
 
-  function renderKeranjang() {
-    const list = document.getElementById("keranjangList");
+  function buildKeranjangList(listId, subtotalId, diskonRowId, diskonDisplayId, totalDisplayId, kembalianValId, btnBayarId) {
+    const list = document.getElementById(listId);
     list.innerHTML = "";
-    total = 0;
 
     if (keranjang.length === 0) {
       list.innerHTML = '<li class="empty-msg">Belum ada item</li>';
     } else {
       keranjang.forEach((item, i) => {
         const sub = item.harga * item.qty;
-        total += sub;
         const li = document.createElement("li");
         li.className = "keranjang-item";
         li.innerHTML = `
@@ -862,52 +1107,107 @@
             <button class="qty-btn" onclick="ubahQty(${i}, +1)">+</button>
           </div>
           <span class="item-subtotal">${rp(sub)}</span>
-          <button class="item-del" onclick="hapusItem(${i})">✕</button>
-        `;
+          <button class="item-del" onclick="hapusItem(${i})">✕</button>`;
         list.appendChild(li);
       });
     }
 
-    const totalEl = document.getElementById("totalDisplay");
-    totalEl.classList.remove("total-flash");
-    void totalEl.offsetWidth; // reflow biar animasi restart
-    totalEl.classList.add("total-flash");
     const diskonNominal = diskonAktif ? total * 0.5 : 0;
     const totalAkhir = total - diskonNominal;
-    document.getElementById("diskonRow").style.display = diskonAktif ? "flex" : "none";
-    document.getElementById("diskonDisplay").textContent = "- " + rp(diskonNominal);
-    document.getElementById("totalDisplay").textContent = rp(totalAkhir);
-    hitungKembalian();
+
+    document.getElementById(subtotalId).textContent = rp(total);
+    document.getElementById(diskonRowId).style.display = diskonAktif ? "flex" : "none";
+    document.getElementById(diskonDisplayId).textContent = "- " + rp(diskonNominal);
+
+    const tEl = document.getElementById(totalDisplayId);
+    tEl.classList.remove("total-flash");
+    void tEl.offsetWidth;
+    tEl.classList.add("total-flash");
+    tEl.textContent = rp(totalAkhir);
+
+    // Kembalian
+    const bayarEl = document.getElementById(
+      listId.includes("Mobile") ? "bayarInputMobile" : "bayarInputDesktop"
+    );
+    const bayar = parseInt(bayarEl.value) || 0;
+    const kembalian = bayar - totalAkhir;
+    document.getElementById(kembalianValId).textContent =
+      kembalian >= 0 ? rp(kembalian) : "Kurang " + rp(-kembalian);
+    document.getElementById(btnBayarId).disabled = !(totalAkhir > 0 && bayar >= totalAkhir);
   }
 
+  function renderKeranjang() {
+    // Recalculate total before rendering
+    total = keranjang.reduce((s, i) => s + i.harga * i.qty, 0);
+
+    buildKeranjangList(
+      "keranjangListMobile", "subtotalMobile", "diskonRowMobile",
+      "diskonDisplayMobile", "totalDisplayMobile", "kembalianValMobile", "btnBayarMobile"
+    );
+    buildKeranjangList(
+      "keranjangListDesktop", "subtotalDesktop", "diskonRowDesktop",
+      "diskonDisplayDesktop", "totalDisplayDesktop", "kembalianValDesktop", "btnBayarDesktop"
+    );
+
+    updateTabBadge();
+  }
+
+  // ── Bayar ──────────────────────────────────────────────────
   function setNominal(n) {
-    document.getElementById("bayarInput").value = n;
+    document.getElementById("bayarInputMobile").value = n;
+    document.getElementById("bayarInputDesktop").value = n;
     hitungKembalian();
   }
 
   function tambahNominal(n) {
-    const cur = parseInt(document.getElementById("bayarInput").value) || 0;
-    document.getElementById("bayarInput").value = cur + n;
+    const cur = parseInt(document.getElementById("bayarInputMobile").value) || 0;
+    document.getElementById("bayarInputMobile").value = cur + n;
+    document.getElementById("bayarInputDesktop").value = cur + n;
     hitungKembalian();
   }
 
   function setBayarPas() {
     const totalAkhir = diskonAktif ? total * 0.5 : total;
-    document.getElementById("bayarInput").value = totalAkhir;
+    document.getElementById("bayarInputMobile").value = totalAkhir;
+    document.getElementById("bayarInputDesktop").value = totalAkhir;
     hitungKembalian();
   }
 
   function hitungKembalian() {
-    const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
+    const bayar = parseInt(document.getElementById("bayarInputMobile").value) ||
+                  parseInt(document.getElementById("bayarInputDesktop").value) || 0;
     const totalAkhir = diskonAktif ? total * 0.5 : total;
     const kembalian = bayar - totalAkhir;
-    document.getElementById("kembalianVal").textContent = kembalian >= 0 ? rp(kembalian) : "Kurang " + rp(-kembalian);
-    document.getElementById("btnBayar").disabled = !(totalAkhir > 0 && bayar >= totalAkhir);
+
+    ["Mobile", "Desktop"].forEach(ctx => {
+      document.getElementById("kembalianVal" + ctx).textContent =
+        kembalian >= 0 ? rp(kembalian) : "Kurang " + rp(-kembalian);
+      document.getElementById("btnBayar" + ctx).disabled = !(totalAkhir > 0 && bayar >= totalAkhir);
+    });
   }
 
+  // ── Promo ──────────────────────────────────────────────────
+  function terapkanPromo(ctx) {
+    const kode = document.getElementById("kodePromo" + (ctx === "mobile" ? "Mobile" : "Desktop")).value.trim();
+    const msg = document.getElementById("promoMsg" + (ctx === "mobile" ? "Mobile" : "Desktop"));
+    if (kode === "AplikasiKasir67") {
+      diskonAktif = true;
+      msg.style.color = "var(--accent)";
+      msg.textContent = "✅ Kode promo berhasil! Diskon 50% diterapkan.";
+      showToast("🎉 Diskon 50% aktif!");
+    } else {
+      diskonAktif = false;
+      msg.style.color = "#e05c5c";
+      msg.textContent = "❌ Kode promo tidak valid.";
+    }
+    renderKeranjang();
+  }
+
+  // ── Konfirmasi ─────────────────────────────────────────────
   function showKonfirmasi() {
     const totalAkhir = diskonAktif ? total * 0.5 : total;
-    const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
+    const bayar = parseInt(document.getElementById("bayarInputMobile").value) ||
+                  parseInt(document.getElementById("bayarInputDesktop").value) || 0;
     const kembalian = bayar - totalAkhir;
     const namaToko = document.getElementById("namaTokoDisplay").textContent;
     let detail = `🏪 <b>${namaToko}</b><br>`;
@@ -915,29 +1215,23 @@
       detail += `${item.emoji} ${item.nama} x${item.qty} — ${rp(item.harga * item.qty)}<br>`;
     });
     if (diskonAktif) detail += `🏷️ Diskon 50% — -${rp(total * 0.5)}<br>`;
-    detail += `<br>💰 <b>Total: ${rp(totalAkhir)}</b><br>`;
-    detail += `💵 Bayar: ${rp(bayar)}<br>`;
-    detail += `🔁 Kembalian: ${rp(kembalian)}`;
+    detail += `<br>💰 <b>Total: ${rp(totalAkhir)}</b><br>💵 Bayar: ${rp(bayar)}<br>🔁 Kembalian: ${rp(kembalian)}`;
     document.getElementById("konfirmasiDetail").innerHTML = detail;
     document.getElementById("konfirmasiOverlay").classList.add("show");
   }
 
-  function tutupKonfirmasi() {
-    document.getElementById("konfirmasiOverlay").classList.remove("show");
-  }
+  function tutupKonfirmasi() { document.getElementById("konfirmasiOverlay").classList.remove("show"); }
+  function konfirmasiBayar() { tutupKonfirmasi(); launchConfetti(); prosesBayar(); }
 
-  function konfirmasiBayar() {
-    tutupKonfirmasi();
-    launchConfetti();
-    prosesBayar();
-  }
-
+  // ── Bayar / Struk ──────────────────────────────────────────
   function prosesBayar() {
-    const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
+    const bayar = parseInt(document.getElementById("bayarInputMobile").value) ||
+                  parseInt(document.getElementById("bayarInputDesktop").value) || 0;
     const totalAkhir = diskonAktif ? total * 0.5 : total;
     const kembalian = bayar - totalAkhir;
     const namaToko = document.getElementById("namaTokoDisplay").textContent;
     const tanggal = new Date().toLocaleString("id-ID");
+
     document.getElementById("strukToko").textContent = "🧾 " + namaToko;
     document.getElementById("strukTanggal").textContent = tanggal;
     let html = "";
@@ -953,81 +1247,61 @@
     document.getElementById("strukKembalian").textContent = rp(kembalian);
     document.getElementById("strukOverlay").classList.add("show");
 
-    // Simpan ke riwayat
     simpanRiwayat({
       tanggal,
       items: keranjang.map(i => ({ nama: i.nama, emoji: i.emoji, qty: i.qty, harga: i.harga })),
-      totalAkhir,
-      bayar,
-      kembalian,
-      diskon: diskonAktif
+      totalAkhir, bayar, kembalian, diskon: diskonAktif
     });
   }
 
+  function tutupStruk() {
+    document.getElementById("strukOverlay").classList.remove("show");
+    resetKasir();
+  }
+
+  function resetKasir() {
+    keranjang = []; total = 0; diskonAktif = false;
+    ["Mobile", "Desktop"].forEach(ctx => {
+      document.getElementById("bayarInput" + ctx).value = "";
+      document.getElementById("kembalianVal" + ctx).textContent = "Rp 0";
+      document.getElementById("btnBayar" + ctx).disabled = true;
+      document.getElementById("kodePromo" + ctx).value = "";
+      document.getElementById("promoMsg" + ctx).textContent = "";
+    });
+    renderKeranjang();
+  }
+
+  // ── Share WA ───────────────────────────────────────────────
   function shareWA() {
     const namaToko = document.getElementById("namaTokoDisplay").textContent;
     const tanggal = document.getElementById("strukTanggal").textContent;
     const totalAkhir = diskonAktif ? total * 0.5 : total;
-    const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
+    const bayar = parseInt(document.getElementById("bayarInputMobile").value) ||
+                  parseInt(document.getElementById("bayarInputDesktop").value) || 0;
     const kembalian = bayar - totalAkhir;
-
-    let pesan = `🧾 *${namaToko}*\n${tanggal}\n`;
-    pesan += `─────────────────\n`;
+    let pesan = `🧾 *${namaToko}*\n${tanggal}\n─────────────────\n`;
     keranjang.forEach(item => {
       pesan += `${item.emoji} ${item.nama} x${item.qty}  →  ${rp(item.harga * item.qty)}\n`;
     });
     if (diskonAktif) pesan += `🏷️ Diskon 50%  →  -${rp(total * 0.5)}\n`;
-    pesan += `─────────────────\n`;
-    pesan += `💰 *TOTAL: ${rp(totalAkhir)}*\n`;
-    pesan += `💵 Bayar: ${rp(bayar)}\n`;
-    pesan += `🔁 Kembalian: ${rp(kembalian)}\n`;
-    pesan += `─────────────────\n`;
-    pesan += `Terima kasih sudah berbelanja! 🙏`;
-
-    const url = `https://wa.me/?text=${encodeURIComponent(pesan)}`;
-    window.open(url, "_blank");
+    pesan += `─────────────────\n💰 *TOTAL: ${rp(totalAkhir)}*\n💵 Bayar: ${rp(bayar)}\n🔁 Kembalian: ${rp(kembalian)}\n─────────────────\nTerima kasih sudah berbelanja! 🙏`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(pesan)}`, "_blank");
   }
 
-  // CONFETTI
-  function launchConfetti() {
-    const colors = ["#f5a623","#ff6b6b","#4ecdc4","#45b7d1","#96e6a1","#ffd93d"];
-    for (let i = 0; i < 80; i++) {
-      const el = document.createElement("div");
-      const size = Math.random() * 8 + 5;
-      el.style.cssText = `
-        position:fixed;
-        left:${Math.random() * 100}vw;
-        top:-10px;
-        width:${size}px;
-        height:${size}px;
-        background:${colors[Math.floor(Math.random() * colors.length)]};
-        border-radius:${Math.random() > 0.5 ? "50%" : "2px"};
-        opacity:1;
-        z-index:9999;
-        pointer-events:none;
-        animation:confettiFall ${1.2 + Math.random() * 1.5}s ease-in forwards;
-        animation-delay:${Math.random() * 0.5}s;
-        transform:rotate(${Math.random() * 360}deg);
-      `;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 3000);
-    }
-  }
-
-  function renderRiwayat() {
-    const el = document.getElementById("riwayatList");
-    const bar = document.getElementById("omzetBar");
+  // ── Riwayat ────────────────────────────────────────────────
+  function buildRiwayatList(listId, barId, jumlahId, totalId, rataId) {
+    const el = document.getElementById(listId);
+    const bar = document.getElementById(barId);
     if (riwayat.length === 0) {
       el.innerHTML = '<p class="empty-msg">Belum ada transaksi</p>';
       bar.style.display = "none";
       return;
     }
-    // Hitung omzet
     const totalOmzet = riwayat.reduce((s, t) => s + t.totalAkhir, 0);
     const rataRata = Math.round(totalOmzet / riwayat.length);
-    document.getElementById("omzetJumlah").textContent = riwayat.length + " transaksi";
-    document.getElementById("omzetTotal").textContent = rp(totalOmzet);
-    document.getElementById("omzetRata").textContent = rp(rataRata);
+    document.getElementById(jumlahId).textContent = riwayat.length + " transaksi";
+    document.getElementById(totalId).textContent = rp(totalOmzet);
+    document.getElementById(rataId).textContent = rp(rataRata);
     bar.style.display = "flex";
 
     el.innerHTML = riwayat.map((t, i) => `
@@ -1040,16 +1314,17 @@
           </div>
         </div>
         <div class="riwayat-items">${t.items.map(it => `${it.emoji} ${it.nama} x${it.qty}`).join(" · ")}${t.diskon ? " · 🏷️ Diskon 50%" : ""}</div>
-      </div>
-    `).join("");
+      </div>`).join("");
   }
 
-  // RIWAYAT TRANSAKSI
-  let riwayat = JSON.parse(localStorage.getItem("riwayatTransaksi") || "[]");
+  function renderRiwayat() {
+    buildRiwayatList("riwayatListMobile", "omzetBarMobile", "omzetJumlahMobile", "omzetTotalMobile", "omzetRataMobile");
+    buildRiwayatList("riwayatListDesktop", "omzetBarDesktop", "omzetJumlahDesktop", "omzetTotalDesktop", "omzetRataDesktop");
+  }
 
   function simpanRiwayat(data) {
-    riwayat.unshift(data); // terbaru di atas
-    if (riwayat.length > 30) riwayat.pop(); // max 30 transaksi
+    riwayat.unshift(data);
+    if (riwayat.length > 30) riwayat.pop();
     localStorage.setItem("riwayatTransaksi", JSON.stringify(riwayat));
     renderRiwayat();
   }
@@ -1068,24 +1343,27 @@
     showToast("🗑️ Riwayat dihapus");
   }
 
-  function tutupStruk() {
-    document.getElementById("strukOverlay").classList.remove("show");
-    resetKasir();
+  // ── Confetti ───────────────────────────────────────────────
+  function launchConfetti() {
+    const colors = ["#f5a623","#ff6b6b","#4ecdc4","#45b7d1","#96e6a1","#ffd93d"];
+    for (let i = 0; i < 80; i++) {
+      const el = document.createElement("div");
+      const size = Math.random() * 8 + 5;
+      el.style.cssText = `
+        position:fixed;left:${Math.random()*100}vw;top:-10px;
+        width:${size}px;height:${size}px;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        border-radius:${Math.random()>.5?"50%":"2px"};opacity:1;z-index:9999;
+        pointer-events:none;
+        animation:confettiFall ${1.2+Math.random()*1.5}s ease-in forwards;
+        animation-delay:${Math.random()*0.5}s;
+        transform:rotate(${Math.random()*360}deg);`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
   }
 
-  function resetKasir() {
-    keranjang = [];
-    total = 0;
-    diskonAktif = false;
-    document.getElementById("bayarInput").value = "";
-    document.getElementById("kembalianVal").textContent = "Rp 0";
-    document.getElementById("btnBayar").disabled = true;
-    document.getElementById("kodePromo").value = "";
-    document.getElementById("promoMsg").textContent = "";
-    document.getElementById("diskonRow").style.display = "none";
-    renderKeranjang();
-  }
-
+  // ── Init ───────────────────────────────────────────────────
   loadNamaToko();
   renderProduk();
   renderKeranjang();
