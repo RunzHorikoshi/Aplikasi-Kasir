@@ -383,6 +383,42 @@
       margin-right: auto;
     }
 
+    /* KONFIRMASI */
+    .konfirmasi-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 150;
+      align-items: center;
+      justify-content: center;
+    }
+    .konfirmasi-overlay.show { display: flex; }
+    .konfirmasi-card {
+      background: var(--surface);
+      border-radius: 14px;
+      padding: 1.5rem;
+      width: min(90%, 340px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .konfirmasi-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    .konfirmasi-detail {
+      background: var(--surface2);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.8;
+      margin-bottom: 1.2rem;
+    }
+    .konfirmasi-actions { display: flex; gap: 8px; }
+    .btn-batal { flex: 1; padding: 10px; border: 1px solid var(--border); background: none; color: var(--text); border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-konfirmasi { flex: 2; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
     /* RIWAYAT */
     .riwayat-item {
       border: 1px solid var(--border);
@@ -398,6 +434,42 @@
     .riwayat-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0 4px; }
     .riwayat-del:hover { color: #e05c5c; }
 
+    @keyframes confettiFall {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* === ANIMASI === */
+
+    /* Ripple produk btn */
+    .produk-btn { position: relative; overflow: hidden; }
+    .produk-btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.15);
+      opacity: 0;
+      border-radius: inherit;
+      transition: opacity 0.3s;
+    }
+    .produk-btn:active::after { opacity: 1; }
+    .produk-btn { transition: transform 0.12s; }
+    .produk-btn:active { transform: scale(0.95); }
+
+    /* Slide-in keranjang item */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-18px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .keranjang-item { animation: slideIn 0.22s ease; }
+
+    /* Total flash */
+    @keyframes flashTotal {
+      0%   { color: var(--accent); transform: scale(1.08); }
+      100% { color: var(--text);   transform: scale(1); }
+    }
+    .total-flash { animation: flashTotal 0.4s ease; }
+
     /* STRUK */
     .struk-overlay {
       display: none;
@@ -409,7 +481,13 @@
       padding: 1rem;
     }
 
+    /* Struk slide-up */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
     .struk-overlay.show { display: flex; }
+    .struk-overlay.show .struk-card { animation: slideUp 0.28s cubic-bezier(0.22,1,0.36,1); }
 
     .struk-card {
       background: #fff;
@@ -437,9 +515,24 @@
     .btn-close-struk { background: none; border: 1px solid #ccc; color: #333; }
 
     @media print {
-      body, .wrap, header, .btn-reset { display: none !important; }
-      .struk-overlay { display: flex !important; position: static; background: none; padding: 0; }
-      .struk-actions { display: none; }
+      body * { visibility: hidden; }
+      .struk-overlay, .struk-overlay * { visibility: visible; }
+      .struk-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        background: none !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+      }
+      .struk-card {
+        box-shadow: none !important;
+        border: none !important;
+        width: 80mm !important;
+        padding: 10px !important;
+        color: #000 !important;
+      }
+      .struk-actions { display: none !important; }
     }
   </style>
 </head>
@@ -517,7 +610,7 @@
         <span class="kembalian-label">Kembalian</span>
         <span class="kembalian-val" id="kembalianVal">Rp 0</span>
       </div>
-      <button class="btn-bayar" id="btnBayar" onclick="prosesBayar()" disabled>Bayar Sekarang</button>
+      <button class="btn-bayar" id="btnBayar" onclick="showKonfirmasi()" disabled>Bayar Sekarang</button>
       <button class="btn-reset" onclick="resetKasir()">Reset transaksi</button>
     </div>
   </div>
@@ -530,9 +623,38 @@
       <div class="panel-title" style="margin-bottom:0;">Riwayat Transaksi</div>
       <button onclick="hapusSemuaRiwayat()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;">Hapus semua</button>
     </div>
+    <!-- OMZET SUMMARY -->
+    <div id="omzetBar" style="display:none;background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:120px;">
+        <div style="font-size:11px;color:var(--muted);">Total Transaksi</div>
+        <div style="font-size:16px;font-weight:700;color:var(--accent);" id="omzetJumlah">0</div>
+      </div>
+      <div style="flex:1;min-width:120px;">
+        <div style="font-size:11px;color:var(--muted);">Total Omzet</div>
+        <div style="font-size:16px;font-weight:700;color:var(--accent);" id="omzetTotal">Rp 0</div>
+      </div>
+      <div style="flex:1;min-width:120px;">
+        <div style="font-size:11px;color:var(--muted);">Rata-rata / Transaksi</div>
+        <div style="font-size:16px;font-weight:700;" id="omzetRata">Rp 0</div>
+      </div>
+    </div>
     <div id="riwayatList"><p class="empty-msg">Belum ada transaksi</p></div>
   </div>
 </div>
+
+<!-- KONFIRMASI BAYAR -->
+<div class="konfirmasi-overlay" id="konfirmasiOverlay">
+  <div class="konfirmasi-card">
+    <div class="konfirmasi-title">Konfirmasi Pembayaran</div>
+    <div class="konfirmasi-detail" id="konfirmasiDetail"></div>
+    <div class="konfirmasi-actions">
+      <button class="btn-batal" onclick="tutupKonfirmasi()">Batal</button>
+      <button class="btn-konfirmasi" onclick="konfirmasiBayar()">✅ Bayar</button>
+    </div>
+  </div>
+</div>
+
+<div class="struk-overlay" id="strukOverlay">
   <div class="struk-card">
     <div class="struk-header">
       <div class="struk-toko" id="strukToko">🧾 Toko Kita</div>
@@ -746,7 +868,10 @@
       });
     }
 
-    document.getElementById("subtotal").textContent = rp(total);
+    const totalEl = document.getElementById("totalDisplay");
+    totalEl.classList.remove("total-flash");
+    void totalEl.offsetWidth; // reflow biar animasi restart
+    totalEl.classList.add("total-flash");
     const diskonNominal = diskonAktif ? total * 0.5 : 0;
     const totalAkhir = total - diskonNominal;
     document.getElementById("diskonRow").style.display = diskonAktif ? "flex" : "none";
@@ -778,6 +903,33 @@
     const kembalian = bayar - totalAkhir;
     document.getElementById("kembalianVal").textContent = kembalian >= 0 ? rp(kembalian) : "Kurang " + rp(-kembalian);
     document.getElementById("btnBayar").disabled = !(totalAkhir > 0 && bayar >= totalAkhir);
+  }
+
+  function showKonfirmasi() {
+    const totalAkhir = diskonAktif ? total * 0.5 : total;
+    const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
+    const kembalian = bayar - totalAkhir;
+    const namaToko = document.getElementById("namaTokoDisplay").textContent;
+    let detail = `🏪 <b>${namaToko}</b><br>`;
+    keranjang.forEach(item => {
+      detail += `${item.emoji} ${item.nama} x${item.qty} — ${rp(item.harga * item.qty)}<br>`;
+    });
+    if (diskonAktif) detail += `🏷️ Diskon 50% — -${rp(total * 0.5)}<br>`;
+    detail += `<br>💰 <b>Total: ${rp(totalAkhir)}</b><br>`;
+    detail += `💵 Bayar: ${rp(bayar)}<br>`;
+    detail += `🔁 Kembalian: ${rp(kembalian)}`;
+    document.getElementById("konfirmasiDetail").innerHTML = detail;
+    document.getElementById("konfirmasiOverlay").classList.add("show");
+  }
+
+  function tutupKonfirmasi() {
+    document.getElementById("konfirmasiOverlay").classList.remove("show");
+  }
+
+  function konfirmasiBayar() {
+    tutupKonfirmasi();
+    launchConfetti();
+    prosesBayar();
   }
 
   function prosesBayar() {
@@ -836,22 +988,48 @@
     window.open(url, "_blank");
   }
 
-  // RIWAYAT TRANSAKSI
-  let riwayat = JSON.parse(localStorage.getItem("riwayatTransaksi") || "[]");
-
-  function simpanRiwayat(data) {
-    riwayat.unshift(data); // terbaru di atas
-    if (riwayat.length > 30) riwayat.pop(); // max 30 transaksi
-    localStorage.setItem("riwayatTransaksi", JSON.stringify(riwayat));
-    renderRiwayat();
+  // CONFETTI
+  function launchConfetti() {
+    const colors = ["#f5a623","#ff6b6b","#4ecdc4","#45b7d1","#96e6a1","#ffd93d"];
+    for (let i = 0; i < 80; i++) {
+      const el = document.createElement("div");
+      const size = Math.random() * 8 + 5;
+      el.style.cssText = `
+        position:fixed;
+        left:${Math.random() * 100}vw;
+        top:-10px;
+        width:${size}px;
+        height:${size}px;
+        background:${colors[Math.floor(Math.random() * colors.length)]};
+        border-radius:${Math.random() > 0.5 ? "50%" : "2px"};
+        opacity:1;
+        z-index:9999;
+        pointer-events:none;
+        animation:confettiFall ${1.2 + Math.random() * 1.5}s ease-in forwards;
+        animation-delay:${Math.random() * 0.5}s;
+        transform:rotate(${Math.random() * 360}deg);
+      `;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
   }
 
   function renderRiwayat() {
     const el = document.getElementById("riwayatList");
+    const bar = document.getElementById("omzetBar");
     if (riwayat.length === 0) {
       el.innerHTML = '<p class="empty-msg">Belum ada transaksi</p>';
+      bar.style.display = "none";
       return;
     }
+    // Hitung omzet
+    const totalOmzet = riwayat.reduce((s, t) => s + t.totalAkhir, 0);
+    const rataRata = Math.round(totalOmzet / riwayat.length);
+    document.getElementById("omzetJumlah").textContent = riwayat.length + " transaksi";
+    document.getElementById("omzetTotal").textContent = rp(totalOmzet);
+    document.getElementById("omzetRata").textContent = rp(rataRata);
+    bar.style.display = "flex";
+
     el.innerHTML = riwayat.map((t, i) => `
       <div class="riwayat-item">
         <div class="riwayat-top">
@@ -864,6 +1042,16 @@
         <div class="riwayat-items">${t.items.map(it => `${it.emoji} ${it.nama} x${it.qty}`).join(" · ")}${t.diskon ? " · 🏷️ Diskon 50%" : ""}</div>
       </div>
     `).join("");
+  }
+
+  // RIWAYAT TRANSAKSI
+  let riwayat = JSON.parse(localStorage.getItem("riwayatTransaksi") || "[]");
+
+  function simpanRiwayat(data) {
+    riwayat.unshift(data); // terbaru di atas
+    if (riwayat.length > 30) riwayat.pop(); // max 30 transaksi
+    localStorage.setItem("riwayatTransaksi", JSON.stringify(riwayat));
+    renderRiwayat();
   }
 
   function hapusRiwayat(i) {
