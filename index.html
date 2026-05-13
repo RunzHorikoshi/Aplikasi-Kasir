@@ -59,7 +59,26 @@
     }
 
     @media (max-width: 640px) {
-      .wrap { grid-template-columns: 1fr; }
+      .wrap { grid-template-columns: 1fr; gap: 10px; }
+
+      body { padding: 0.6rem; }
+
+      /* Produk card lebih compact di HP */
+      .produk-img-wrap { aspect-ratio: 3/2; }
+      .produk-img-placeholder { font-size: 22px; }
+      .produk-info { padding: 6px 8px; }
+      .produk-name { font-size: 12px; }
+      .produk-price { font-size: 11px; }
+
+      /* Nominal tombol 3 kolom biar ga rapet */
+      .nominal-grid { grid-template-columns: repeat(3, 1fr); }
+
+      /* Uang btn 2 kolom */
+      .nominal-uang-grid { grid-template-columns: repeat(2, 1fr); }
+
+      /* Total font lebih kecil sedikit */
+      .total-big { font-size: 17px; }
+      .kembalian-val { font-size: 17px; }
     }
 
     .panel {
@@ -330,6 +349,55 @@
 
     .btn-reset:hover { border-color: #555; color: var(--text); }
 
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--accent);
+      color: #fff;
+      padding: 9px 18px;
+      border-radius: 99px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 200;
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* NAMA TOKO */
+    .nama-toko-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 1.25rem;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* RIWAYAT */
+    .riwayat-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: var(--surface2);
+    }
+    .riwayat-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .riwayat-tgl { font-size: 11px; color: var(--muted); }
+    .riwayat-total { font-size: 14px; font-weight: 700; color: var(--accent); }
+    .riwayat-items { font-size: 12px; color: var(--muted); }
+    .riwayat-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; padding: 0 4px; }
+    .riwayat-del:hover { color: #e05c5c; }
+
     /* STRUK */
     .struk-overlay {
       display: none;
@@ -363,8 +431,9 @@
     .struk-kmb-row { display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-top: 4px; }
     .struk-footer { text-align: center; font-size: 11px; color: #888; margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #ccc; }
     .struk-actions { display: flex; gap: 8px; margin-top: 1rem; }
-    .struk-actions button { flex: 1; padding: 9px; font-size: 13px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+    .struk-actions button { flex: 1; padding: 9px 4px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; }
     .btn-print { background: #111; color: #fff; border: none; }
+    .btn-share-wa { background: #25D366; color: #fff; border: none; }
     .btn-close-struk { background: none; border: 1px solid #ccc; color: #333; }
 
     @media print {
@@ -378,9 +447,16 @@
 
 <header>
   <div class="logo">₿</div>
-  <h1>Kasir Sederhana</h1>
+  <h1 id="namaTokoDisplay">Kasir Sederhana</h1>
   <span id="jamDisplay"></span>
 </header>
+
+<div class="nama-toko-row" style="max-width:900px;margin:0 auto 1rem;display:flex;gap:6px;align-items:center;">
+  <input type="text" id="inputNamaToko" placeholder="Nama toko..." style="flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);outline:none;" />
+  <button onclick="simpanNamaToko()" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:7px 12px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;">Simpan</button>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <div class="wrap">
   <div class="panel">
@@ -389,7 +465,7 @@
     <div class="panel-title">Tambah produk lain</div>
     <div class="custom-row">
       <input type="text" id="cNama" placeholder="Nama produk" />
-      <input type="number" id="cHarga" placeholder="Harga" min="0" />
+      <input type="number" id="cHarga" placeholder="Harga" min="0" inputmode="numeric" />
       <button class="btn-add" onclick="tambahCustom()">+ Tambah</button>
     </div>
   </div>
@@ -401,7 +477,18 @@
     </ul>
     <div class="total-section">
       <div class="total-row"><span>Subtotal</span><span id="subtotal">Rp 0</span></div>
+      <div class="total-row" id="diskonRow" style="display:none;color:var(--accent);">
+        <span>Diskon 50% 🎉</span><span id="diskonDisplay">- Rp 0</span>
+      </div>
       <div class="total-big"><span>Total</span><span id="totalDisplay">Rp 0</span></div>
+    </div>
+    <div class="promo-section" style="margin-top:0.8rem;">
+      <div class="bayar-label">Kode promo</div>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="kodePromo" placeholder="Masukkan kode promo..." style="flex:1;font-size:13px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--text);outline:none;" />
+        <button onclick="terapkanPromo()" style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;font-weight:600;color:var(--accent);cursor:pointer;">Pakai</button>
+      </div>
+      <div id="promoMsg" style="font-size:12px;margin-top:5px;"></div>
     </div>
     <div class="bayar-section">
       <div class="bayar-label">Uang dibayar</div>
@@ -424,7 +511,7 @@
         <button class="nominal-btn" onclick="tambahNominal(50000)">+50rb</button>
       </div>
 
-      <input class="bayar-input" type="number" id="bayarInput" placeholder="Atau ketik nominal..." min="0" oninput="hitungKembalian()" />
+      <input class="bayar-input" type="number" id="bayarInput" placeholder="Atau ketik nominal..." min="0" inputmode="numeric" oninput="hitungKembalian()" />
 
       <div class="kembalian-box">
         <span class="kembalian-label">Kembalian</span>
@@ -436,10 +523,19 @@
   </div>
 </div>
 
-<div class="struk-overlay" id="strukOverlay">
+<!-- RIWAYAT TRANSAKSI -->
+<div style="max-width:900px;margin:14px auto 2rem;">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.85rem;">
+      <div class="panel-title" style="margin-bottom:0;">Riwayat Transaksi</div>
+      <button onclick="hapusSemuaRiwayat()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);cursor:pointer;">Hapus semua</button>
+    </div>
+    <div id="riwayatList"><p class="empty-msg">Belum ada transaksi</p></div>
+  </div>
+</div>
   <div class="struk-card">
     <div class="struk-header">
-      <div class="struk-toko">🧾 Toko Kita</div>
+      <div class="struk-toko" id="strukToko">🧾 Toko Kita</div>
       <div class="struk-sub" id="strukTanggal"></div>
     </div>
     <div id="strukItems"></div>
@@ -449,7 +545,8 @@
     <div class="struk-kmb-row"><span>Kembalian</span><span id="strukKembalian"></span></div>
     <div class="struk-footer">Terima kasih sudah berbelanja! 🙏</div>
     <div class="struk-actions">
-      <button class="btn-print" onclick="window.print()">Print Struk</button>
+      <button class="btn-print" onclick="window.print()">🖨️ Print</button>
+      <button class="btn-share-wa" onclick="shareWA()">📲 WA</button>
       <button class="btn-close-struk" onclick="tutupStruk()">Tutup</button>
     </div>
   </div>
@@ -465,8 +562,16 @@
     { nama: "Snack", harga: 7000, emoji: "🍿" },
   ];
 
+  // Load produk custom dari localStorage
+  let produkCustom = JSON.parse(localStorage.getItem("produkCustom") || "[]");
+
+  function simpanProdukCustom() {
+    localStorage.setItem("produkCustom", JSON.stringify(produkCustom));
+  }
+
   let keranjang = [];
   let total = 0;
+  let diskonAktif = false;
 
   function rp(n) {
     return "Rp " + Math.round(n).toLocaleString("id-ID");
@@ -497,12 +602,91 @@
       btn.onclick = () => tambahItem(p.nama, p.harga, p.emoji);
       grid.appendChild(btn);
     });
+
+    produkCustom.forEach((p, i) => {
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "position:relative;";
+
+      const btn = document.createElement("button");
+      btn.className = "produk-btn";
+      btn.innerHTML = `
+        <div class="produk-img-wrap">
+          <div class="produk-img-placeholder">${p.emoji}</div>
+        </div>
+        <div class="produk-info">
+          <span class="produk-name">${p.nama}</span>
+          <span class="produk-price">${rp(p.harga)}</span>
+        </div>
+      `;
+      btn.onclick = () => tambahItem(p.nama, p.harga, p.emoji);
+
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "✕";
+      delBtn.style.cssText = "position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center;";
+      delBtn.onclick = (e) => { e.stopPropagation(); hapusProdukCustom(i); };
+
+      wrap.appendChild(btn);
+      wrap.appendChild(delBtn);
+      grid.appendChild(wrap);
+    });
+  }
+
+  function hapusProdukCustom(i) {
+    if (!confirm("Hapus produk \"" + produkCustom[i].nama + "\"?")) return;
+    produkCustom.splice(i, 1);
+    simpanProdukCustom();
+    renderProduk();
+    showToast("🗑️ Produk dihapus");
+  }
+
+  // PROMO
+  function terapkanPromo() {
+    const kode = document.getElementById("kodePromo").value.trim();
+    const msg = document.getElementById("promoMsg");
+    if (kode === "AplikasiKasir67") {
+      diskonAktif = true;
+      msg.style.color = "var(--accent)";
+      msg.textContent = "✅ Kode promo berhasil! Diskon 50% diterapkan.";
+      showToast("🎉 Diskon 50% aktif!");
+    } else {
+      diskonAktif = false;
+      msg.style.color = "#e05c5c";
+      msg.textContent = "❌ Kode promo tidak valid.";
+    }
+    renderKeranjang();
+  }
+
+  // TOAST
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 1800);
+  }
+
+  // NAMA TOKO
+  function simpanNamaToko() {
+    const val = document.getElementById("inputNamaToko").value.trim();
+    if (!val) return;
+    document.getElementById("namaTokoDisplay").textContent = val;
+    localStorage.setItem("namaToko", val);
+    showToast("✅ Nama toko disimpan");
+  }
+
+  // Load nama toko dari localStorage
+  function loadNamaToko() {
+    const saved = localStorage.getItem("namaToko");
+    if (saved) {
+      document.getElementById("namaTokoDisplay").textContent = saved;
+      document.getElementById("inputNamaToko").value = saved;
+    }
   }
 
   function tambahItem(nama, harga, emoji) {
     const idx = keranjang.findIndex(k => k.nama === nama);
     if (idx >= 0) keranjang[idx].qty += 1;
     else keranjang.push({ nama, harga, emoji: emoji || "🛒", qty: 1 });
+    showToast("🛒 " + nama + " ditambahkan");
     renderKeranjang();
   }
 
@@ -510,6 +694,13 @@
     const nama = document.getElementById("cNama").value.trim();
     const harga = parseInt(document.getElementById("cHarga").value);
     if (!nama || isNaN(harga) || harga <= 0) return;
+    // Simpan ke produkCustom kalau belum ada
+    const sudahAda = [...produkDefault, ...produkCustom].find(p => p.nama === nama);
+    if (!sudahAda) {
+      produkCustom.push({ nama, harga, emoji: "🛒" });
+      simpanProdukCustom();
+      renderProduk();
+    }
     tambahItem(nama, harga, "🛒");
     document.getElementById("cNama").value = "";
     document.getElementById("cHarga").value = "";
@@ -522,6 +713,7 @@
   }
 
   function hapusItem(idx) {
+    if (!confirm("Hapus " + keranjang[idx].nama + " dari keranjang?")) return;
     keranjang.splice(idx, 1);
     renderKeranjang();
   }
@@ -555,7 +747,11 @@
     }
 
     document.getElementById("subtotal").textContent = rp(total);
-    document.getElementById("totalDisplay").textContent = rp(total);
+    const diskonNominal = diskonAktif ? total * 0.5 : 0;
+    const totalAkhir = total - diskonNominal;
+    document.getElementById("diskonRow").style.display = diskonAktif ? "flex" : "none";
+    document.getElementById("diskonDisplay").textContent = "- " + rp(diskonNominal);
+    document.getElementById("totalDisplay").textContent = rp(totalAkhir);
     hitungKembalian();
   }
 
@@ -571,30 +767,117 @@
   }
 
   function setBayarPas() {
-    document.getElementById("bayarInput").value = total;
+    const totalAkhir = diskonAktif ? total * 0.5 : total;
+    document.getElementById("bayarInput").value = totalAkhir;
     hitungKembalian();
   }
 
   function hitungKembalian() {
     const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
-    const kembalian = bayar - total;
+    const totalAkhir = diskonAktif ? total * 0.5 : total;
+    const kembalian = bayar - totalAkhir;
     document.getElementById("kembalianVal").textContent = kembalian >= 0 ? rp(kembalian) : "Kurang " + rp(-kembalian);
-    document.getElementById("btnBayar").disabled = !(total > 0 && bayar >= total);
+    document.getElementById("btnBayar").disabled = !(totalAkhir > 0 && bayar >= totalAkhir);
   }
 
   function prosesBayar() {
     const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
-    const kembalian = bayar - total;
-    document.getElementById("strukTanggal").textContent = new Date().toLocaleString("id-ID");
+    const totalAkhir = diskonAktif ? total * 0.5 : total;
+    const kembalian = bayar - totalAkhir;
+    const namaToko = document.getElementById("namaTokoDisplay").textContent;
+    const tanggal = new Date().toLocaleString("id-ID");
+    document.getElementById("strukToko").textContent = "🧾 " + namaToko;
+    document.getElementById("strukTanggal").textContent = tanggal;
     let html = "";
     keranjang.forEach(item => {
       html += `<div class="struk-item-row"><span>${item.nama} x${item.qty}</span><span>${rp(item.harga * item.qty)}</span></div>`;
     });
+    if (diskonAktif) {
+      html += `<div class="struk-item-row" style="color:#e05c5c;"><span>Diskon 50%</span><span>- ${rp(total * 0.5)}</span></div>`;
+    }
     document.getElementById("strukItems").innerHTML = html;
-    document.getElementById("strukTotal").textContent = rp(total);
+    document.getElementById("strukTotal").textContent = rp(totalAkhir);
     document.getElementById("strukBayar").textContent = rp(bayar);
     document.getElementById("strukKembalian").textContent = rp(kembalian);
     document.getElementById("strukOverlay").classList.add("show");
+
+    // Simpan ke riwayat
+    simpanRiwayat({
+      tanggal,
+      items: keranjang.map(i => ({ nama: i.nama, emoji: i.emoji, qty: i.qty, harga: i.harga })),
+      totalAkhir,
+      bayar,
+      kembalian,
+      diskon: diskonAktif
+    });
+  }
+
+  function shareWA() {
+    const namaToko = document.getElementById("namaTokoDisplay").textContent;
+    const tanggal = document.getElementById("strukTanggal").textContent;
+    const totalAkhir = diskonAktif ? total * 0.5 : total;
+    const bayar = parseInt(document.getElementById("bayarInput").value) || 0;
+    const kembalian = bayar - totalAkhir;
+
+    let pesan = `🧾 *${namaToko}*\n${tanggal}\n`;
+    pesan += `─────────────────\n`;
+    keranjang.forEach(item => {
+      pesan += `${item.emoji} ${item.nama} x${item.qty}  →  ${rp(item.harga * item.qty)}\n`;
+    });
+    if (diskonAktif) pesan += `🏷️ Diskon 50%  →  -${rp(total * 0.5)}\n`;
+    pesan += `─────────────────\n`;
+    pesan += `💰 *TOTAL: ${rp(totalAkhir)}*\n`;
+    pesan += `💵 Bayar: ${rp(bayar)}\n`;
+    pesan += `🔁 Kembalian: ${rp(kembalian)}\n`;
+    pesan += `─────────────────\n`;
+    pesan += `Terima kasih sudah berbelanja! 🙏`;
+
+    const url = `https://wa.me/?text=${encodeURIComponent(pesan)}`;
+    window.open(url, "_blank");
+  }
+
+  // RIWAYAT TRANSAKSI
+  let riwayat = JSON.parse(localStorage.getItem("riwayatTransaksi") || "[]");
+
+  function simpanRiwayat(data) {
+    riwayat.unshift(data); // terbaru di atas
+    if (riwayat.length > 30) riwayat.pop(); // max 30 transaksi
+    localStorage.setItem("riwayatTransaksi", JSON.stringify(riwayat));
+    renderRiwayat();
+  }
+
+  function renderRiwayat() {
+    const el = document.getElementById("riwayatList");
+    if (riwayat.length === 0) {
+      el.innerHTML = '<p class="empty-msg">Belum ada transaksi</p>';
+      return;
+    }
+    el.innerHTML = riwayat.map((t, i) => `
+      <div class="riwayat-item">
+        <div class="riwayat-top">
+          <span class="riwayat-tgl">📅 ${t.tanggal}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="riwayat-total">${rp(t.totalAkhir)}</span>
+            <button class="riwayat-del" onclick="hapusRiwayat(${i})">✕</button>
+          </div>
+        </div>
+        <div class="riwayat-items">${t.items.map(it => `${it.emoji} ${it.nama} x${it.qty}`).join(" · ")}${t.diskon ? " · 🏷️ Diskon 50%" : ""}</div>
+      </div>
+    `).join("");
+  }
+
+  function hapusRiwayat(i) {
+    riwayat.splice(i, 1);
+    localStorage.setItem("riwayatTransaksi", JSON.stringify(riwayat));
+    renderRiwayat();
+  }
+
+  function hapusSemuaRiwayat() {
+    if (!confirm("Hapus semua riwayat transaksi?")) return;
+    riwayat = [];
+    localStorage.removeItem("riwayatTransaksi");
+    renderRiwayat();
+    showToast("🗑️ Riwayat dihapus");
   }
 
   function tutupStruk() {
@@ -605,14 +888,20 @@
   function resetKasir() {
     keranjang = [];
     total = 0;
+    diskonAktif = false;
     document.getElementById("bayarInput").value = "";
     document.getElementById("kembalianVal").textContent = "Rp 0";
     document.getElementById("btnBayar").disabled = true;
+    document.getElementById("kodePromo").value = "";
+    document.getElementById("promoMsg").textContent = "";
+    document.getElementById("diskonRow").style.display = "none";
     renderKeranjang();
   }
 
+  loadNamaToko();
   renderProduk();
   renderKeranjang();
+  renderRiwayat();
 </script>
 </body>
 </html>
